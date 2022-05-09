@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CLIENT_ID</key>
+	<string>1061500507951-9ln69p42sphvqtl5catejbh7a36l4nvp.apps.googleusercontent.com</string>
+	<key>REVERSED_CLIENT_ID</key>
+	<string>com.googleusercontent.apps.1061500507951-9ln69p42sphvqtl5catejbh7a36l4nvp</string>
+	<key>API_KEY</key>
+	<string>AIzaSyBuoGlyAFa2zmgFRIXyL9S9jysNVc4uRtg</string>
+	<key>GCM_SENDER_ID</key>
+	<string>1061500507951</string>
+	<key>PLIST_VERSION</key>
+	<string>1</string>
+	<key>BUNDLE_ID</key>
+	<string>kr.re.kict.cim</string>
+	<key>PROJECT_ID</key>
+	<string>scim-1e19f</string>
+	<key>STORAGE_BUCKET</key>
+	<string>scim-1e19f.appspot.com</string>
+	<key>IS_ADS_ENABLED</key>
+	<false></false>
+	<key>IS_ANALYTICS_ENABLED</key>
+	<false></false>
+	<key>IS_APPINVITE_ENABLED</key>
+	<true></true>
+	<key>IS_GCM_ENABLED</key>
+	<true></true>
+	<key>IS_SIGNIN_ENABLED</key>
+	<true></true>
+	<key>GOOGLE_APP_ID</key>
+	<string>1:1061500507951:ios:93bb3dcc4b81a11a</string>
+	<key>DATABASE_URL</key>
+	<string>https://scim-1e19f.firebaseio.com</string>
+</dict>
+</plist>

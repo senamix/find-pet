@@ -1,0 +1,55 @@
+{
+  "project_info": {
+    "project_number": "1061500507951",
+    "firebase_url": "https://scim-1e19f.firebaseio.com",
+    "project_id": "scim-1e19f",
+    "storage_bucket": "scim-1e19f.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1061500507951:android:93bb3dcc4b81a11a",
+        "android_client_info": {
+          "package_name": "kr.re.kict.cim"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1061500507951-5nm9oe7iknjj85680argo4k4jn0o8dn1.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "kr.re.kict.cim",
+            "certificate_hash": "f05d0bc728c4a6c1c18fda2b5762f030c67d0e7e"
+          }
+        },
+        {
+          "client_id": "1061500507951-6flpmu0bp51fvd7pib7j1g7t65gn8f43.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCL4akQZ1EPFcQbrMoPVK4XqvPSv87wDPo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "100993115723647070717",
+              "client_type": 3
+            },
+            {
+              "client_id": "1061500507951-9ln69p42sphvqtl5catejbh7a36l4nvp.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "kr.re.kict.cim"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
