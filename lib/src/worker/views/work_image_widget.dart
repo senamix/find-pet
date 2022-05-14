@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:developer';
 
 import 'package:back_button_interceptor/back_button_interceptor.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -10,10 +11,11 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:logging/logging.dart';
 import 'package:scim/src/common/dialog_widget.dart';
 import 'package:scim/src/configs/base_config.dart';
-import 'package:signalr_client/signalr_client.dart';
+import 'package:scim/src/worker/views/views.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:signalr_netcore/signalr_client.dart';
 
 import '../../../splash/view/splash_page.dart';
-import '../../common/camera_widget.dart';
 import '../bloc/worker_bloc.dart';
 import '../models/models.dart';
 
@@ -24,16 +26,7 @@ final transportProtLogger = Logger("SignalR - transport");
 
 // The location of the SignalR Server.
 final serverUrl = BaseConfig.devServer;
-const connectionOptions = HttpConnectionOptions;
-final httpOptions = HttpConnectionOptions(logger: transportProtLogger);
-
-// If you need to authorize the Hub connection than provide a an async callback function that returns
-// the token string (see AccessTokenFactory typdef) and assigned it to the accessTokenFactory parameter:
-// final httpOptions = new HttpConnectionOptions( .... accessTokenFactory: () async => await getAccessToken() );
-
-// Creates the connection by using the HubConnectionBuilder.
-final hubConnection = HubConnectionBuilder().withUrl(serverUrl, options: httpOptions).configureLogging(hubProtLogger).build();
-// When the connection is closed, print out a message to the console.
+late HubConnection hubConnection;
 
 class WorkerImageView extends StatefulWidget {
   WorkerImageView({Key? key,
@@ -55,9 +48,17 @@ class _WorkImageViewState extends State<WorkerImageView> {
   String? comment;
   List<Object> comments = [];
 
+  Future<String?> get username async {
+    Future<SharedPreferences> futurePrefs = SharedPreferences.getInstance();
+    SharedPreferences prefs = await futurePrefs;
+    String? username = prefs.getString("username");
+    return username;
+  }
+
   @override
   void initState() {
     super.initState();
+    initSignalR();
     _workerBloc.add(WorkerGetListPhoto(widget.post));
     _workerBloc.add(WorkerGetFollowPost(widget.post));
     BackButtonInterceptor.add(myInterceptor);
@@ -86,63 +87,128 @@ class _WorkImageViewState extends State<WorkerImageView> {
               if (state.status == WorkerStatus.failure) {
                 DialogWidget.flutterSnackBar(context,content: "API 반환 오류");
               }
+              if (state.status == WorkerStatus.deleted) {
+                Navigator.pushAndRemoveUntil<void>(
+                  context,
+                  MaterialPageRoute<void>(builder: (BuildContext context) => WorkListView()),
+                  ModalRoute.withName('/worker'),
+                );
+              }
             },
             builder: (context, state) {
               switch (state.status) {
                 case WorkerStatus.failure:
                 case WorkerStatus.success:
-                  return Scaffold(
-                      body: SingleChildScrollView(
-                        scrollDirection: Axis.vertical,
-                        child: Column(
-                            children: [
-                              SizedBox(
-                                height: size.height*0.5,
-                                child: Stack(
+                  return FutureBuilder(
+                    future: username,
+                    builder: (context, snapshot) {
+                      if (snapshot.data == null) {
+                        return Scaffold(
+                            body: SingleChildScrollView(
+                              scrollDirection: Axis.vertical,
+                              child: Column(
                                   children: [
-                                    _determineBeforeTab(context,size,state),
-                                    IconButton(
-                                      icon: const Icon(Icons.arrow_back, color: Colors.white,),
-                                      onPressed: () {
-                                        {
-                                          Navigator.pop(context);
-                                        }
-                                      },
-                                    )
-                                  ],
-                                ),
+                                    SizedBox(
+                                      height: size.height*0.5,
+                                      child: Stack(
+                                        children: [
+                                          _determineBeforeTab(context,size,state),
+                                          IconButton(
+                                            icon: const Icon(Icons.arrow_back, color: Colors.white,),
+                                            onPressed: () {
+                                              {
+                                                Navigator.pop(context);
+                                              }
+                                            },
+                                          )
+                                        ],
+                                      ),
+                                    ),
+                                    _renderBasicInfo(context, size, state),
+                                    _renderComment(context, size, state),
+                                    Container(
+                                      alignment: Alignment.bottomCenter,
+                                      margin: const EdgeInsets.all(20),
+                                      child: TextFormField(
+                                        decoration: InputDecoration(
+                                            border: const OutlineInputBorder(),
+                                            hintText: '댓글',
+                                            suffixIcon: IconButton(
+                                              onPressed: () async{
+                                                await hubConnection.start();
+                                                await hubConnection.invoke("SendComment", args: <Object>[comment ?? '']);
+                                              },
+                                              icon: const Icon(Icons.send_outlined),
+                                            )
+                                        ),
+                                        keyboardType: TextInputType.multiline,
+                                        maxLines: null,
+                                        onChanged: (value){
+                                          comment = value;
+                                        },
+                                      ),
+                                    ),
+                                  ]
                               ),
-                              _renderBasicInfo(context, size, state),
-                              _renderComment(context, size, state),
-                              Container(
-                                alignment: Alignment.bottomCenter,
-                                margin: const EdgeInsets.all(20),
-                                child: TextFormField(
-                                  decoration: const InputDecoration(
-                                    border: OutlineInputBorder(),
-                                    hintText: '댓글',
-                                  ),
-                                  keyboardType: TextInputType.multiline,
-                                  maxLines: null,
-                                  onChanged: (value){
-                                    comment = value;
-                                  },
-                                ),
+                            )
+                        );
+                      }
+                      if (snapshot.data != null) {
+                        return Scaffold(
+                            body: SingleChildScrollView(
+                              scrollDirection: Axis.vertical,
+                              child: Column(
+                                  children: [
+                                    SizedBox(
+                                      height: size.height*0.5,
+                                      child: Stack(
+                                        children: [
+                                          _determineBeforeTab(context,size,state),
+                                          IconButton(
+                                            icon: const Icon(Icons.arrow_back, color: Colors.white,),
+                                            onPressed: () {
+                                              {
+                                                Navigator.pop(context);
+                                              }
+                                            },
+                                          )
+                                        ],
+                                      ),
+                                    ),
+                                    _renderBasicInfoAuthor(context, size, state),
+                                    _renderComment(context, size, state),
+                                    Container(
+                                      alignment: Alignment.bottomCenter,
+                                      margin: const EdgeInsets.all(20),
+                                      child: TextFormField(
+                                        decoration: InputDecoration(
+                                            border: const OutlineInputBorder(),
+                                            hintText: '댓글',
+                                            suffixIcon: IconButton(
+                                              onPressed: () async{
+                                                if(hubConnection.state == HubConnectionState.Connected){
+                                                  await hubConnection.invoke("SendComment", args: <Object>[comment ?? '']);
+                                                }
+                                              },
+                                              icon: const Icon(Icons.send_outlined),
+                                            )
+                                        ),
+                                        keyboardType: TextInputType.multiline,
+                                        maxLines: null,
+                                        onChanged: (value){
+                                          comment = value;
+                                        },
+                                      ),
+                                    ),
+                                  ]
                               ),
-                              Container(
-                                alignment: Alignment.bottomRight,
-                                margin: const EdgeInsets.only(right: 20, bottom: 20),
-                                child: ElevatedButton(
-                                  onPressed: () async {
-                                    await hubConnection.start();
-                                    await hubConnection.invoke("SendComment", args: <Object>[comment ?? '']);
-                                  },
-                                  child: const Text("확인"),
-                                ),
-                              )
-                            ]
-                        ),
-                      )
+                            )
+                        );
+                      } else {
+                        // Otherwise, display a loading indicator.
+                        return const Center(child: CircularProgressIndicator());
+                      }
+                    },
                   );
                 default:
                   return const SplashPage();
@@ -152,13 +218,7 @@ class _WorkImageViewState extends State<WorkerImageView> {
     );
   }
 
-  void _handleAClientProvidedFunction(List<Object> parameters) async {
-    await hubConnection.start();
-    comments = parameters;
-  }
-
   Widget _renderComment(BuildContext context, Size size, WorkerState state){
-    hubConnection.on("ReceiveComment", _handleAClientProvidedFunction);
     return SingleChildScrollView(
         scrollDirection: Axis.vertical,
         child: Column(
@@ -167,7 +227,7 @@ class _WorkImageViewState extends State<WorkerImageView> {
     );
   }
 
-  Column _renderBasicInfo(BuildContext context, Size size, WorkerState state){
+  Column _renderBasicInfoAuthor(BuildContext context, Size size, WorkerState state){
     return Column(
       children: [
         Row(
@@ -208,9 +268,88 @@ class _WorkImageViewState extends State<WorkerImageView> {
           ],
         ),
         Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.start,
+            children: [
+              TextButton(
+                onPressed: () {
+                  _workerBloc.add(WorkerfollowPost(post: widget.post));
+                },
+                child: state.heart == true || state.follow == true
+                    ? const Icon(FontAwesomeIcons.solidHeart,color: Colors.red)
+                    : const Icon(FontAwesomeIcons.heart,color: Colors.black),
+              ),
+              TextButton(
+                onPressed: () {
+                    DialogWidget.flutterDialog(context, content: "수정 기능을 자원하지 않습니다.");
+                },
+                child: const Icon(Icons.drive_file_rename_outline,color: Colors.black),
+              ),
+              TextButton(
+                onPressed: () {
+                  _workerBloc.add(WorkerDeletePost(widget.post.id ?? ''));
+                },
+                child: const Icon(FontAwesomeIcons.trash,color: Colors.blue),
+              ),
+            ],
+          ),
+          Container(
+            margin: const EdgeInsets.only(right: 20.0),
+            child: Text(widget.post.posterName ?? 'noname'),
+          ),
+          ]
+        ),
+      ],
+    );
+  }
+
+  Column _renderBasicInfo(BuildContext context, Size size, WorkerState state) {
+    return Column(
+      children: [
+        Row(
           children: [
-            Row(
+            Container(
+              margin: const EdgeInsets.only(top: 10, left: 10),
+              child: Row(
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  children: [
+                    SizedBox(
+                      width: size.width * 0.95,
+                      child: Text(widget.post.title ?? '',
+                        textAlign: TextAlign.left,
+                        style: const TextStyle(
+                            fontWeight: FontWeight.bold, fontSize: 20),
+                      ),
+                    )
+                  ]
+              ),
+            ),
+          ],
+        ),
+        Row(
+          children: [
+            Container(
+              margin: const EdgeInsets.only(top: 10, left: 10),
+              child: Row(
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  children: [
+                    SizedBox(
+                      width: size.width * 0.95,
+                      child: Text(widget.post.content ?? '',
+                        textAlign: TextAlign.left,
+                      ),
+                    )
+                  ]
+              ),
+            ),
+          ],
+        ),
+        Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
                 mainAxisAlignment: MainAxisAlignment.start,
                 children: [
                   TextButton(
@@ -218,16 +357,18 @@ class _WorkImageViewState extends State<WorkerImageView> {
                       _workerBloc.add(WorkerfollowPost(post: widget.post));
                     },
                     child: state.heart == true || state.follow == true
-                        ? const Icon(FontAwesomeIcons.solidHeart,color: Colors.red)
-                        : const Icon(FontAwesomeIcons.heart,color: Colors.black),
+                        ? const Icon(
+                        FontAwesomeIcons.solidHeart, color: Colors.red)
+                        : const Icon(
+                        FontAwesomeIcons.heart, color: Colors.black),
                   ),
-                ]
-            ),
-            Container(
-              margin: const EdgeInsets.only(right: 20.0),
-              child: Text(widget.post.posterName ?? ''),
-            ),
-          ],
+                ],
+              ),
+              Container(
+                margin: const EdgeInsets.only(right: 20.0),
+                child: Text(widget.post.posterName ?? 'noname'),
+              ),
+            ]
         ),
       ],
     );
@@ -291,7 +432,7 @@ class _WorkImageViewState extends State<WorkerImageView> {
       ),
     );
   }
-  
+
   Widget _determineBeforeTab(BuildContext context,Size size, WorkerState state){
     if(state.photos != null && state.photos!.isNotEmpty){
       return _renderImageElements(context,size, state.photos ?? []);
@@ -299,26 +440,11 @@ class _WorkImageViewState extends State<WorkerImageView> {
     return _renderTabBarNoImage(context, true);
   }
 
-  Future<void> takeCamera(BuildContext context, bool before, String? planId) async {
-    // Ensure that plugin services are initialized so that `availableCameras()`
-    // can be called before `runApp()`
-    WidgetsFlutterBinding.ensureInitialized();
-
-    // Obtain a list of the available cameras on the device.
-    final cameras = await availableCameras();
-
-    // Get a specific camera from the list of available cameras.
-    final firstCamera = cameras.first;
-
-    Navigator.push(context,
-        MaterialPageRoute(builder: (context) => TakePictureScreen(camera: firstCamera, post: widget.post)));
-  }
-
   Stack _renderTabBarImage(BuildContext context, Photo? photo){
     return Stack(
       children: [
         CachedNetworkImage(
-          imageUrl: photo?.url,
+          imageUrl: photo?.url ?? 'https://upload.wikimedia.org/wikipedia/commons/b/b1/Loading_icon.gif?20151024034921',
           imageBuilder: (context, imageProvider) => Container(
             decoration: BoxDecoration(
               image: DecorationImage(
@@ -339,7 +465,7 @@ class _WorkImageViewState extends State<WorkerImageView> {
       ],
     );
   }
-  
+
   Stack _renderTabBarNoImage(BuildContext context, bool before){
     return Stack(children: [
       Container(
@@ -352,6 +478,19 @@ class _WorkImageViewState extends State<WorkerImageView> {
       ),
     ],
     );
+  }
+
+  void initSignalR() async {
+    hubConnection = HubConnectionBuilder().withUrl(serverUrl).build();
+    await hubConnection.start();
+    hubConnection.onclose((error) {
+      log(error.toString());
+    });
+    hubConnection.on("ReceiveComment", (arguments) {
+      setState(() {
+        comments = arguments;
+      });
+    });
   }
 }
 

@@ -10,7 +10,7 @@
       "client_info": {
         "mobilesdk_app_id": "1:1061500507951:android:93bb3dcc4b81a11a",
         "android_client_info": {
-          "package_name": "kr.re.kict.cim"
+          "package_name": "com.senamix.findpet"
         }
       },
       "oauth_client": [
@@ -18,7 +18,7 @@
           "client_id": "1061500507951-5nm9oe7iknjj85680argo4k4jn0o8dn1.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
-            "package_name": "kr.re.kict.cim",
+            "package_name": "com.senamix.findpet",
             "certificate_hash": "f05d0bc728c4a6c1c18fda2b5762f030c67d0e7e"
           }
         },
@@ -43,7 +43,7 @@
               "client_id": "1061500507951-9ln69p42sphvqtl5catejbh7a36l4nvp.apps.googleusercontent.com",
               "client_type": 2,
               "ios_info": {
-                "bundle_id": "kr.re.kict.cim"
+                "bundle_id": "com.senamix.findpet"
               }
             }
           ]

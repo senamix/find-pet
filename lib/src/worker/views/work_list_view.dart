@@ -1,15 +1,8 @@
-import 'dart:collection';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:localstorage/localstorage.dart';
-import 'package:scim/src/utils/upload_delay_image.dart';
 import 'package:scim/src/worker/bloc/worker_bloc.dart';
 import 'package:scim/src/worker/views/views.dart';
 import 'package:scim/src/worker/views/work_list_search_view.dart';
-import 'package:flutter_map/flutter_map.dart';
-import 'package:latlong2/latlong.dart';
-import '../../common/map_widget.dart';
 
 class WorkListView extends StatelessWidget {
   WorkListView({Key? key}) : super(key: key);
@@ -45,7 +38,7 @@ class WorkListView extends StatelessWidget {
                 backgroundColor: Colors.blueAccent,
                 onPressed: (){
                   Navigator.push(context,
-                      MaterialPageRoute(builder: (context) => MapView())
+                      MaterialPageRoute(builder: (context) => const AddWorkView())
                   );
                 },
                 child: const Icon(Icons.add),

@@ -6,7 +6,6 @@ import 'package:scim/src/common/dialog_widget.dart';
 import 'package:scim/src/setting/views/userid.dart';
 import 'package:scim/src/setting/views/username.dart';
 
-import '../../login/models/models.dart';
 import '../../login/views/login_page.dart';
 import '../bloc/setting_bloc.dart';
 
@@ -43,7 +42,6 @@ class _MainViewState extends State<MainView> {
                     const Padding(padding: EdgeInsets.only(bottom: 10)),
                     _renderUserAvatarAndBio(),
                     const Padding(padding: EdgeInsets.only(bottom: 30)),
-                    _renderItem(context,Icons.line_weight_sharp, "나의 글", 1, state),
                     _renderItem(context,Icons.workspaces_filled, "아이디", 2, state),
                     _renderItem(context,Icons.drive_file_rename_outline, "사용자 이름", 3, state),
                     _renderItem(context,Icons.logout, "로그아웃", 4, state)

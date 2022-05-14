@@ -4,6 +4,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:scim/src/utils/convert_date.dart';
 import 'package:scim/src/worker/views/views.dart';
+import 'package:scim/src/worker/views/work_image_widget.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../bloc/worker_bloc.dart';
 import '../models/models.dart';
@@ -33,9 +35,9 @@ class _WorkerListItemState extends State<WorkerListItem> {
       },
       builder: (context, state){
           return InkWell(
-            onTap: (){
-              Navigator.push(context,
-                  MaterialPageRoute(builder: (context) => WorkerImageView(info: true, post: widget.post)));
+            onTap: () async {
+                Navigator.push(context,
+                    MaterialPageRoute(builder: (context) => WorkerImageView(info: true, post: widget.post)));
             },
             child: Card(
               margin: const EdgeInsets.all(5.0),
@@ -89,8 +91,8 @@ class _WorkerListItemState extends State<WorkerListItem> {
                               const Icon(FontAwesomeIcons.heart),
                               Text(widget.post.postParticipants?.length.toString() ?? ''),
                               const Padding(padding: EdgeInsets.only(left: 10)),
-                              Icon(FontAwesomeIcons.comment),
-                              Text("3"),
+                              const Icon(FontAwesomeIcons.comment),
+                              const Text("3"),
                             ],
                           ),
                         ),

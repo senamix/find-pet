@@ -1,5 +1,6 @@
 
 import 'package:bloc_concurrency/bloc_concurrency.dart';
+import 'package:camera/camera.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:scim/src/configs/base_config.dart';
@@ -22,16 +23,18 @@ EventTransformer<E> throttleDroppable<E>(Duration duration) {
 
 class WorkerBloc extends Bloc<WorkerEvent, WorkerState>{
   WorkerBloc() : super(WorkerState()) {
-    on<WorkerCreatePlan>(_onCreatePlan);
     on<WorkerLoadViewListWork>(_onLoadViewListWork);
     on<WorkerChangeToLoadStatus>(_onChangeLoadStatus);
     on<WorkerChangeToSuccessStatus>(_onChangeSuccessStatus);
     on<WorkerGetListPost>(_onGetListPost);
     on<WorkerGetListPhoto>(_onGetPostPhotoList);
-    on<WorkerUploadImage>(_onUploadImages);
     on<WorkerfollowPost>(_onFollowPost);
     on<WorkerGetFollowPost>(_onGetFollowPost);
     on<WorkerGetAllTags>(_onGetAllTags);
+    on<WorkerGetPostByParams>(_onGetPostByParams);
+    on<WorkerAddPost>(_onAddPost);
+    on<WorkerDeletePost>(_onDeletePost);
+    on<WorkerSearchPostByConditions>(_onSearchPostByConditions);
   }
 
   WorkerRepository workerRepository = WorkerRepository();
@@ -46,34 +49,6 @@ class WorkerBloc extends Bloc<WorkerEvent, WorkerState>{
 
   void _onChangeSuccessStatus(WorkerChangeToSuccessStatus event, Emitter<WorkerState> emit) async{
     emit(state.copyWith(status: WorkerStatus.success));
-  }
-
-  void _onFollowPost(WorkerfollowPost event, Emitter<WorkerState> emit) async{
-    emit(state.copyWith(status: WorkerStatus.loading));
-    try {
-      bool? follow = await workerRepository.followPost(event.post?.id ?? '');
-      if(follow != null && follow == true){
-        emit(state.copyWith(
-          status: WorkerStatus.success,
-          heart: true,
-          )
-        );
-      }
-    } catch (e) {
-      emit(state.copyWith(status: WorkerStatus.failure));
-    }
-  }
-
-  void _onCreatePlan(WorkerCreatePlan event, Emitter<WorkerState> emit) async {
-    emit(state.copyWith(status: WorkerStatus.loading));
-    try {
-      Post? plan = await workerRepository.createdNewPlan(event.id, event.name);
-      if(plan != null){
-        emit(state.copyWith(status: WorkerStatus.created));
-      }
-    } catch (e) {
-      emit(state.copyWith(status: WorkerStatus.failure));
-    }
   }
 
   void _onGetListPost(WorkerGetListPost event, Emitter<WorkerState> emit) async {
@@ -98,9 +73,56 @@ class WorkerBloc extends Bloc<WorkerEvent, WorkerState>{
             status: WorkerStatus.success,
             doingPlans: planList.toSet().toList(),
             hasReachedMax: false,
-            )
+          )
           );
         }
+      }
+    } catch (e) {
+      emit(state.copyWith(status: WorkerStatus.failure));
+    }
+  }
+
+  void _onFollowPost(WorkerfollowPost event, Emitter<WorkerState> emit) async{
+    emit(state.copyWith(status: WorkerStatus.loading));
+    try {
+      bool? follow = await workerRepository.followPost(event.post?.id ?? '');
+      if(follow != null && follow == true){
+        emit(state.copyWith(
+          status: WorkerStatus.success,
+          heart: true,
+        )
+        );
+      }
+    } catch (e) {
+      emit(state.copyWith(status: WorkerStatus.failure));
+    }
+  }
+
+  void _onDeletePost(WorkerDeletePost event, Emitter<WorkerState> emit) async{
+    emit(state.copyWith(status: WorkerStatus.loading));
+    try {
+      bool? deleted = await workerRepository.deletePost(event.postId ?? '');
+      if(deleted != null && deleted == true){
+        emit(state.copyWith(status: WorkerStatus.deleted));
+      }
+    } catch (e) {
+      emit(state.copyWith(status: WorkerStatus.failure));
+    }
+  }
+
+  void _onSearchPostByConditions(WorkerSearchPostByConditions event, Emitter<WorkerState> emit) async {
+    emit(state.copyWith(status: WorkerStatus.loading));
+    try {
+      //ng nam
+      List<String> tags = event.tags.split(",");
+      tags.addAll([',',',',',',',',',']);
+      List<Post>? posts = await workerRepository.getSearchByConditions(roadLocation: event.roadLocation, tags: tags);
+      if(posts != null){
+        emit(state.copyWith(
+          status: WorkerStatus.success,
+          doingPlans: posts.toSet().toList(),
+          )
+        );
       }
     } catch (e) {
       emit(state.copyWith(status: WorkerStatus.failure));
@@ -154,14 +176,30 @@ class WorkerBloc extends Bloc<WorkerEvent, WorkerState>{
     }
   }
 
-  void _onUploadImages(WorkerUploadImage event, Emitter<WorkerState> emit) async {
+  void _onGetPostByParams(WorkerGetPostByParams event, Emitter<WorkerState> emit) async {
     emit(state.copyWith(status: WorkerStatus.loading));
-    try {
-      bool? uploaded = await workerRepository.uploadPlanPhoto();
-      if(uploaded != null && uploaded == true){
-        emit(state.copyWith(status: WorkerStatus.success));
+    try{
+      final tags = await workerRepository.getAllTags();
+      if(tags != null){
+        return emit(state.copyWith(
+          status: WorkerStatus.success,
+          tags: tags,
+        ));
       }
-    } catch (e) {
+    }catch (e) {
+      emit(state.copyWith(status: WorkerStatus.failure));
+    }
+  }
+
+  //ng nam
+  void _onAddPost(WorkerAddPost event, Emitter<WorkerState> emit) async {
+    emit(state.copyWith(status: WorkerStatus.loading));
+    try{
+      final tags = await workerRepository.createNewPost(event.images, event.postLocation, event.title, event.content, event.tags);
+      if(tags != null){
+        emit(state.copyWith(status: WorkerStatus.created));
+      }
+    }catch (e) {
       emit(state.copyWith(status: WorkerStatus.failure));
     }
   }

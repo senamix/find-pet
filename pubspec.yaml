@@ -17,13 +17,11 @@ dependencies:
   url_launcher: ^6.0.18
   flutter_custom_cards: ^0.2.1
   font_awesome_flutter: ^9.2.0
-  #flutter_calendar_carousel: ^1.5.3
   back_button_interceptor: ^5.0.2
   carousel_slider: ^3.0.0
   camera: ^0.9.4+16 #support taking camera lib
   path_provider: ^2.0.9
   path: ^1.8.0
-  table_calendar: ^3.0.0 #safety calendar
   syncfusion_flutter_calendar: ^19.4.55
   flutter_map: ^0.14.0
   #google_maps_flutter: ^2.1.1
@@ -38,7 +36,7 @@ dependencies:
   smart_select: ^4.3.2
   geolocator: ^8.2.0
   #flutter_local_notifications: ^9.4.0
-  cached_network_image: ^2.5.1
+  cached_network_image: ^3.2.0
   gallery_saver: ^2.3.2
   image_picker: ^0.8.4+11
   stream_transform: ^2.0.0
@@ -53,9 +51,15 @@ dependencies:
   firebase_messaging: ^11.2.13
   flutter_local_notifications: ^8.2.0
   flutter_launcher_icons: ^0.9.1
-  google_maps_flutter: ^2.1.4
   signalr_client: ^0.1.6
+  http_parser: ^4.0.0
+  dio: ^4.0.6
+  latlng: ^0.1.0
+  google_maps_flutter: ^2.1.4
+  #signalr_client: ^0.1.6
+  signalr_netcore: any
   logging: ^0.11.3+2
+  date_time_picker: "^2.1.0"
 
 flutter_icons:
   image_path: "assets/playstore_image/Icon-App-20x20@1x.png"

@@ -11,7 +11,8 @@ class PostLocation extends Equatable{
   double? longitude;
   double? latitude;
 
-  PostLocation({this.id});
+  PostLocation({this.id, this.postCode, this.roadLocation, this.location,
+    this.detailedLocation,this.extraLocation, this.latitude, this.longitude});
 
   PostLocation.fromJson(Map<String, dynamic> json)
     : id = json['id'],
@@ -25,7 +26,6 @@ class PostLocation extends Equatable{
   ;
 
   Map<String, dynamic> toJson() => {
-    'id': id,
     'postCode': postCode,
     'roadLocation' : roadLocation,
     'location' : location,

@@ -642,7 +642,7 @@
 			<key>entitlements</key>
 			<dict>
 				<key>application-identifier</key>
-				<string>ZJNUCBU4FG.kr.re.kict.cim</string>
+				<string>ZJNUCBU4FG.com.senamix.findpet</string>
 				<key>aps-environment</key>
 				<string>development</string>
 				<key>com.apple.developer.team-identifier</key>
@@ -659,7 +659,7 @@
 				<key>dateExpires</key>
 				<string>2023/04/19</string>
 				<key>name</key>
-				<string>iOS Team Provisioning Profile: kr.re.kict.cim</string>
+				<string>iOS Team Provisioning Profile: com.senamix.findpet</string>
 			</dict>
 			<key>team</key>
 			<dict>

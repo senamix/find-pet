@@ -8,6 +8,14 @@ class WorkerEvent extends Equatable{
   List<Object?> get props => [];
 }
 
+class WorkerSearchPostByConditions extends WorkerEvent{
+  WorkerSearchPostByConditions({required this.tags, this.roadLocation, this.fromDate, this.toDate});
+  String tags;
+  String? roadLocation;
+  String? fromDate;
+  String? toDate;
+}
+
 class WorkerLoadViewListWork extends WorkerEvent{
   const WorkerLoadViewListWork();
 }
@@ -18,12 +26,6 @@ class WorkerChangeToLoadStatus extends WorkerEvent{
 
 class WorkerChangeToSuccessStatus extends WorkerEvent{
   const WorkerChangeToSuccessStatus();
-}
-
-class WorkerCreatePlan extends WorkerEvent{
-  const WorkerCreatePlan(this.id, this.name);
-  final String id;
-  final String name;
 }
 
 class WorkerGetListPost extends WorkerEvent{
@@ -45,16 +47,24 @@ class WorkerGetAllTags extends WorkerEvent{
   const WorkerGetAllTags();
 }
 
+class WorkerGetPostByParams extends WorkerEvent{
+  WorkerGetPostByParams(this.roadLocation, this.tags);
+  String? roadLocation;
+  List<Tag>? tags;
+}
 
+class WorkerAddPost extends WorkerEvent{
+  WorkerAddPost(this.tags, this.images, this.postLocation,this.title, this.content);
+  String title;
+  String content;
+  List<String> tags;
+  List<XFile> images;
+  PostLocation? postLocation;
+}
 
-
-
-
-
-class WorkerDeletePlan extends WorkerEvent{
-  const WorkerDeletePlan(this.planId, this.assignment);
-  final String planId;
-  final bool assignment;
+class WorkerDeletePost extends WorkerEvent{
+  const WorkerDeletePost(this.postId);
+  final String postId;
 }
 
 class WorkerGetListPhoto extends WorkerEvent{

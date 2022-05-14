@@ -1,15 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:scim/src/main/navigator/info_navigator.dart';
+import 'package:scim/src/worker/views/work_around.dart';
 
 import '../navigator/info_navigator.dart';
 import '../navigator/setting_navigator.dart';
 import '../navigator/work_list_navigator.dart';
 
 class HomeView extends StatefulWidget {
-  HomeView({Key? key, this.flag}) : super(key: key);
+  HomeView({Key? key, this.flag, this.initIndex}) : super(key: key);
   static const routeName = '/home';
   bool? flag;
+  int? initIndex;
 
   @override
   _HomeViewState createState() => _HomeViewState();
@@ -39,6 +41,10 @@ class _HomeViewState extends State<HomeView> {
       label: '홈',
     ),
     const BottomNavigationBarItem(
+      icon: FaIcon(Icons.flag),
+      label: '나의 근처',
+    ),
+    const BottomNavigationBarItem(
       icon: FaIcon(FontAwesomeIcons.solidUser),
       label: '나의 정보',
     ),
@@ -51,6 +57,7 @@ class _HomeViewState extends State<HomeView> {
   List<StatefulWidget> userNavigator = [
     const InfoNavigator(),
     const WorkListNavigator(),
+    WorkerAround(),
     const SettingNavigator(),
   ];
 
@@ -67,7 +74,7 @@ class _HomeViewState extends State<HomeView> {
         ),
       ),
       bottomNavigationBar:BottomNavigationBar(
-        currentIndex: _selectedIndex,
+        currentIndex: widget.initIndex ?? _selectedIndex,
         selectedItemColor: Colors.blue.shade500,
         unselectedItemColor: Colors.black54,
         onTap: (int index) {

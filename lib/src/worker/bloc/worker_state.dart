@@ -2,7 +2,7 @@
 part of 'worker_bloc.dart';
 
 enum WorkerStatus{
-  loading, success, failure, created,
+  loading, success, failure, created, deleted
 }
 
 class WorkerState extends Equatable{

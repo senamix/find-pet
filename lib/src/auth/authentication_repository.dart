@@ -57,8 +57,10 @@ class AuthenticationRepository {
         Map<String, dynamic> map = jsonDecode(response.body);
         Auth resAuth = Auth.fromJson(map);
         final token = resAuth.token;
-        if (token != null) {
+        final username = resAuth.username;
+        if (token != null && username != null) {
           await prefs.setString("token", token);
+          await prefs.setString("username", username);
           return true;
         }
       }else if(response.statusCode == 400){

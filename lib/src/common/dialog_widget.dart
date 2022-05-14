@@ -1,9 +1,4 @@
-import 'dart:developer';
-
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-
-import '../main/views/home_view.dart';
 
 class DialogWidget {
   static void flutterDialog(BuildContext context,{String title = "알림",
@@ -83,29 +78,11 @@ class DialogWidget {
               ElevatedButton(
                 child: Text(buttonNoView),
                 onPressed: () async {
-                  try{
-                    SharedPreferences prefs = await SharedPreferences.getInstance();
-                    prefs.setBool("notify", false);
-                    Navigator.pushReplacement(context,
-                      MaterialPageRoute(builder: (context) => HomeView()),
-                    );
-                  }catch(e){
-                    log(e.toString());
-                  }
                 },
               ),
               ElevatedButton(
                 child: Text(buttonText),
                 onPressed: () async {
-                  try{
-                    SharedPreferences prefs = await SharedPreferences.getInstance();
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(builder: (context) => HomeView()),
-                    );
-                  }catch(e){
-                    log(e.toString());
-                  }
                 },
               ),
             ],

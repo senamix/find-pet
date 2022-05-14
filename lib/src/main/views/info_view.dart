@@ -54,19 +54,19 @@ class _InfoViewState extends State<InfoView> {
       buildCard(context,
           leading: 'assets/images/other/chuck.png',
           title: '애완동물원',
-          namedPath:['market://details?id=kr.co.chukchuk&hl=ko','itms://itunes.apple.com/kr/app/apple-store/id806134531?mt=8']),
+          namedPath:['https://www.google.com/search?client=firefox-b-lm&tbs=lf:1,lf_ui:1&tbm=lcl&sxsrf=ALiCzsaRp1ACJG5Hj0D5MQwQtL8-XHTTYg:1652456554793&q=%EC%9C%A0%EB%AA%85%ED%95%9C+%EC%95%A0%EC%99%84%EB%8F%99%EB%AC%BC%EC%9B%90&rflfq=1&num=10&sa=X&ved=2ahUKEwjv1dGv6Nz3AhVJqVYBHTWUD_oQjGp6BAghEAE&biw=2048&bih=984&dpr=1.25#rlfi=hd:;si:;mv:[[37.90600010000001,127.5722224],[35.7394549,126.7058045]];tbs:lrf:!1m4!1u3!2m2!3m1!1e1!1m4!1u2!2m2!2m1!1e1!2m1!1e2!2m1!1e3!3sIAE,lf:1,lf_ui:1']),
       buildCard(context,
           leading: 'assets/images/Icon/vital.png',
           title: '애완동물 음식',
-          namedPath: ['https://band.us/@csms','https://band.us/@csms']),
+          namedPath: ['https://www.google.com/search?q=%EC%95%A0%EC%99%84%EB%8F%99%EB%AC%BC+%EC%9D%8C%EC%8B%9D&client=firefox-b-lm&biw=2048&bih=984&tbm=lcl&sxsrf=ALiCzsYkTJ-byVpHz6zECrMtvniHws7kww%3A1652456684138&ei=7Hx-Ysn0B6232roP-5OB0AM&oq=%EC%95%A0%EC%99%84%EB%8F%99%EB%AC%BC+%EC%9D%8C%EC%8B%9D&gs_l=psy-ab.3..0i30k1j0i15i30k1j0i8i30k1.32038.36991.0.37256.9.8.0.0.0.0.181.786.0j5.5.0....0...1c.1j4.64.psy-ab..4.5.785...35i39k1j0i512i433k1j0i512k1.0.5OtrdCrySDk#rlfi=hd:;si:;mv:[[37.6256932,127.14793699999998],[37.2379033,126.76639929999997]];tbs:lrf:!1m4!1u3!2m2!3m1!1e1!1m4!1u2!2m2!2m1!1e1!2m1!1e2!2m1!1e3!3sIAE,lf:1,lf_ui:2']),
       buildCard(context,
           leading: 'assets/images/Icon/public.png',
           title: '애완동물 유의사항',
-          namedPath: ['http://www.molit.go.kr/USR/WPGE0201/m_122/DTL.jsp','http://www.molit.go.kr/USR/WPGE0201/m_122/DTL.jsp']),
+          namedPath: ['https://www.korea.kr/news/visualNewsView.do?newsId=148855120']),
       buildCard(context,
           leading: 'assets/images/Icon/help.png',
-          title: '애완동물 정보',
-          namedPath: ['Help','Help']),
+          title: '애완동물 보호정보',
+          namedPath: ['https://www.animal.go.kr/front/index.do']),
     ]);
   }
 
@@ -95,7 +95,7 @@ class _InfoViewState extends State<InfoView> {
               if (defaultTargetPlatform == TargetPlatform.android) {
                 launch(namedPath[0]);
               } else if (defaultTargetPlatform == TargetPlatform.iOS) {
-                launch(namedPath[1]);
+                launch(namedPath[0]);
               }
             }
           ),

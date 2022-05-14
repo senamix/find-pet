@@ -4,6 +4,8 @@ import 'dart:developer';
 import 'dart:io';
 
 import 'package:async/async.dart';
+import 'package:camera/camera.dart';
+import 'package:dio/dio.dart';
 import 'package:gallery_saver/gallery_saver.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
@@ -23,12 +25,12 @@ import 'models/models.dart';
 class WorkerRepository {
   AuthenticationRepository authenticationRepository = AuthenticationRepository();
 
-  Future<List<Post>?> getListPost([int page = 1]) async{
+  Future<List<Post>?> getListPost([int page = 1]) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     String? token = prefs.getString("token");
     Auth? auth = await authenticationRepository.getAccountInfo();
-    if(auth != null){
-      final uri = Uri.parse(BaseConfig.devURL+"/posts");
+    if (auth != null) {
+      final uri = Uri.parse(BaseConfig.devURL + "/posts");
       final response = await http.get(uri,
           headers: {
             "Content-Type": "application/json",
@@ -36,12 +38,52 @@ class WorkerRepository {
       );
       if (response.statusCode >= 200 && response.statusCode < 300) {
         Iterable body = json.decode(response.body);
-        List<Post> posts = List<Post>.from(body.map((post) => Post.fromJson(post)));
+        List<Post> posts = List<Post>.from(
+            body.map((post) => Post.fromJson(post)));
         return posts;
       }
     }
+  }
+
+    Future<Post?> getPostById(String id) async{
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      String? token = prefs.getString("token");
+      Auth? auth = await authenticationRepository.getAccountInfo();
+      if(auth != null){
+        final uri = Uri.parse(BaseConfig.devURL+"/posts/$id");
+        final response = await http.get(uri,
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": "Bearer $token"}
+        );
+        if (response.statusCode >= 200 && response.statusCode < 300) {
+          Map<String, dynamic> map = jsonDecode(response.body);
+          Post? post = Post.fromJson(map);
+          return post;
+        }
+      }
 
     throw Exception('error getting list doing plan by token');
+  }
+
+  Future<List<Post>?> getSearchByConditions({String? roadLocation, List<String>? tags, String? fromDate, String? toDate}) async{
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? token = prefs.getString("token");
+    final uri = Uri.parse(BaseConfig.devURL+
+        '/posts?roadLocation=${roadLocation ?? ''}&Tag1=${tags?[0] ?? ''}&Tag2=${tags?[1] ?? ''}&Tag3=${tags?[2] ?? ''}&Tag4=${tags?[3] ?? ''}&Tag5=${tags?[4] ?? ''}&fromDate=${fromDate ?? ''}&toDate=${toDate ?? ''}');
+    final response = await http.get(uri,
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer $token"},
+    );
+
+    if (response.statusCode >= 200 && response.statusCode <= 304) {
+      Iterable body = json.decode(response.body);
+      List<Post> posts = List<Post>.from(body.map((post) => Post.fromJson(post)));
+      return posts;
+    }
+
+    throw Exception('error posting plan err');
   }
 
   Future<bool>? followPost(String postId) async{
@@ -126,7 +168,7 @@ class WorkerRepository {
     throw Exception('error posting plan err');
   }
 
-  static Future<List<String>>? getRoadInfo(String address) async{
+  static Future<List<PostLocation>>? getRoadInfo(String address) async{
     String vworld = 'http://api.vworld.kr/req/search?service=search&request=search&version=2.0&size=20&page=1&query=가산&type=address&format=json&errorformat=json&key=7DE98C24-F447-3263-BD86-A3AB1E460311&category=road';
 
     final uri = Uri.parse(vworld);
@@ -142,57 +184,126 @@ class WorkerRepository {
       Map<String, dynamic> result = res["result"];
       List<dynamic> items = result["items"];
       List<dynamic> addresses = [];
+      List<dynamic> points = [];
       for (var element in items) {
         addresses.add(element["address"]);
+        points.add(element["point"]);
       }
-      List<String> roads = [];
-      for (var element in addresses) {
-        roads.add(element["road"]);
+      List<PostLocation> postLocations = [];
+      for (int i=0; i<addresses.length; i++) {
+        PostLocation postLocation = PostLocation(
+            postCode: addresses[i]["zipcode"],roadLocation: addresses[i]["road"],
+            location: addresses[i]["parcel"], detailedLocation: addresses[i]["bldnm"],
+            latitude: double.parse(points[i]["y"]), longitude: double.parse(points[i]["x"])
+        );
+        postLocations.add(postLocation);
       }
-      return roads;
+
+      return postLocations;
     }
     throw Exception('error posting plan err');
   }
 
-
-
-
-
-  Future<Post?> createdNewPlan(String cvplTyId, String name) async{
+  Future<List<Tag>>? getPostByParams({String? roadLocation, List<Tag>? tags}) async{
     SharedPreferences prefs = await SharedPreferences.getInstance();
     String? token = prefs.getString("token");
-    Position _currentPosition = await _determinePosition();
-    Auth? auth = await AuthenticationRepository().getAccountInfo();
+    String tagParams;
+    if(tags != null && tags.isNotEmpty){
+      tagParams = tags.join("&");
+    }
 
-    Map<String, dynamic> map() => cvplTyId == "5cfda3bab615b60845c79dda" ? {
-      'cvplTy': cvplTyId,
-      'cvplCn' : '$name 작업추가',
-      'lineNum' : '0',
-      'directionUpDn' : false, //상행
-    } : {
-      'cvplTy': cvplTyId,
-      'cvplCn' : '$name 작업추가',
-    };
-
-    final uri = Uri.parse(BaseConfig.baseUrl+'/cvpls/worker');
-    final response = await http.post(uri,
+    final uri = Uri.parse(BaseConfig.devURL+'/posts?roadLocation=${roadLocation ?? ''}&');
+    final response = await http.get(uri,
       headers: {
         "Content-Type": "application/json",
         "Authorization": "Bearer $token"},
-        body: jsonEncode(map()),
     );
 
     if (response.statusCode >= 200 && response.statusCode <= 304) {
-      Map<String, dynamic> map = jsonDecode(response.body);
-      Post plan = Post.fromJson(map);
-      return plan;
+      Iterable body = json.decode(response.body);
+      List<Tag> tags = List<Tag>.from(body.map((tag) => Tag.fromJson(tag)));
+      return tags;
     }
-
     throw Exception('error posting plan err');
   }
 
+  Future<bool?> createNewPost(List<XFile>? images, PostLocation? postLocation, String title, String content, List<String>? tags, [isFound = false]) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? token = prefs.getString("token");
+    List<http.MultipartFile> multipartFiles = [];
+
+    if(images != null && images.isNotEmpty){
+      for (var image in images) {
+        var stream = http.ByteStream(DelegatingStream.typed(image.openRead()));
+        var length = await image.length();
+
+        multipartFiles.add(http.MultipartFile(
+            'Files', stream, length,
+            filename: basename(image.path),
+            contentType: MediaType('image', 'png')
+        ));
+      }
+    }
+
+    Map<String, dynamic> mapLocation = {
+      "postCode" : postLocation?.postCode ?? '',
+      "roadLocation" : postLocation?.roadLocation ?? '',
+      "location" : postLocation?.location ?? '',
+      "detailedLocation" : postLocation?.detailedLocation ?? '',
+      "extraLocation" : postLocation?.extraLocation ?? '',
+      "latitude" : postLocation?.latitude?? 0,
+      "longitude" : postLocation?.longitude ?? 0,
+    };
+
+    Map<String, dynamic> mapPost = {
+      "title": title,
+      "content": content,
+      "isFound" : isFound,
+      "postLocation": mapLocation,
+    };
+
+    if(tags != null){
+      int i = tags.length;
+      for(i; i<6; i++){
+        i++;
+        tags.add("");
+      }
+    }
+
+    Map<String, dynamic> mapTags(value) => {
+      "tagName" : value
+    };
+
+    Map<String, String> mapFields = {
+      "Post" : jsonEncode(mapPost),
+      "Tag1" : jsonEncode(mapTags(tags?[0] ?? '')),
+      "Tag2" : jsonEncode(mapTags(tags?[1] ?? '')),
+      "Tag3" : jsonEncode(mapTags(tags?[2] ?? '')),
+      "Tag4" : jsonEncode(mapTags(tags?[3] ?? '')),
+      "Tag5" : jsonEncode(mapTags(tags?[4] ?? '')),
+    };
+
+    Map<String, String> headers = {
+      "Content-Type": "application/json",
+      "Authorization": "Bearer $token"
+    };
+
+    final uri = Uri.parse('${BaseConfig.devURL}/posts');
+    var request = http.MultipartRequest("POST", uri);
+
+    request.headers.addAll(headers);
+    request.fields.addAll(mapFields);
+    request.files.addAll(multipartFiles);
+    final response = await request.send();
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      return true;
+    }
+
+    throw Exception('error upload plan photo by token');
+  }
+
   //to get address text and point from vworld
-  Future<Position> _determinePosition() async {
+  Future<Position> determinePosition() async {
     bool serviceEnabled;
     LocationPermission permission;
 
@@ -250,218 +361,19 @@ class WorkerRepository {
     throw Exception('error getting list doing plan by token');
   }
 
-  Future<bool?> changePlanStatus(String planId, String statusLevel) async{
+  Future<bool?> deletePost(String postId) async{
     SharedPreferences prefs = await SharedPreferences.getInstance();
     String? token = prefs.getString("token");
-    Map<String, dynamic> map = {
-      'opertSttus': statusLevel,
-    };
-    final uri = Uri.parse(BaseConfig.baseUrl+"/plans/$planId");
-    final response = await http.put(uri,
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": "Bearer $token"},
-        body: jsonEncode(map));
-    if (response.statusCode >= 200 && response.statusCode < 300) {
-      return true;
-    }
-    throw Exception('error putting a plan by token');
-  }
-
-  Future<bool?> savePlanPhoto(String imagePath, bool before, String planId) async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    String? token = prefs.getString("token");
-    bool? uploadPic = prefs.getBool("uploadedPic");
-
-    //get path info of file
-    String dir = path.dirname(imagePath);
-    String newPath = path.join(dir, '${planId}_${ConvertDate.formatStringByPattern('yyyyMMddHHmmssSSS',DateTime.now())}.jpg');
-    File image = File(imagePath);
-
-    //change name of image, after save the image to disk
-    //Both images and videos will be visible in Android Gallery and iOS Photos.
-    File file = image.renameSync(newPath);
-    GallerySaver.saveImage(file.path);
-
-    var stream = http.ByteStream(DelegatingStream.typed(file.openRead()));
-    var length = await file.length();
-
-    //get location info
-    Position _currentPosition = await _determinePosition();
-
-    Map<String, String> headers = {
-      "Content-Type": "application/json",
-      "Authorization": "Bearer $token"
-    };
-
-    Map<String, String> mapPhoto = {
-      "plans": planId,
-      "photoTy": before == true ? '착수' : '완료',
-      "photoLa": '${_currentPosition.latitude}',
-      "photoLo": '${_currentPosition.longitude}',
-    };
-
-    if(uploadPic != null && uploadPic == true){ //일괄
-      final uri = Uri.parse(BaseConfig.baseUrl+'/photos/worker');
-      mapPhoto.addAll({
-        "uri" : file.path,
-      });
-      final response = await http.post(uri,
-        headers: headers,
-        body: jsonEncode(mapPhoto),
-      );
-      if (response.statusCode >= 200 && response.statusCode <= 304) {
-        //시진을 찍었으면 착수 상태로 변환
-        bool? status = await changePlanStatus(planId, 'A2'); //착수
-        if(status != null && status == true){
-          Map<String, dynamic> map = jsonDecode(response.body);
-          Photo photo = Photo.fromJson(map);
-          final LocalStorage storage = LocalStorage('hms-scim');
-          Map<String, String> delayImageMap = {};
-          String? json = storage.getItem("delay_image_list");
-          try{
-            if(json != null){
-              delayImageMap = jsonDecode(json).cast<String,String>();
-              delayImageMap.addAll({photo.id! : photo.url!});
-            }else{
-              delayImageMap.addAll({photo.id! : photo.url!});
-            }
-            //await storage.clear();
-            storage.setItem("delay_image_list", jsonEncode(delayImageMap));
-          }catch(e){
-            log(e.toString());
-          }
-          return true;
-        }
-      }
-
-    }else if(uploadPic != null && uploadPic == false){ //즉시
-      final uri = Uri.parse('${BaseConfig.baseUrl}/photos');
-      var request = http.MultipartRequest("POST", uri);
-      var multipartFile = http.MultipartFile('img', stream, length,
-          filename: basename(file.path),
-          contentType: MediaType('image', 'png')
-      );
-
-      request.headers.addAll(headers);
-      request.files.add(multipartFile);
-      request.fields.addAll(mapPhoto);
-      final response = await request.send();
-      if (response.statusCode >= 200 && response.statusCode < 300) {
-        bool? status = await changePlanStatus(planId, 'A2'); //착수
-        if(status != null && status == true){
-          return true;
-        }
-      }
-    }
-    throw Exception('error post plan photo by token');
-  }
-
-  Future<bool?> uploadPlanPhoto() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    String? token = prefs.getString("token");
-    final LocalStorage storage = LocalStorage('hms-scim');
-    String? json = storage.getItem("delay_image_list");
-    bool flag = false; //사진 업로드 성공한지 판단 변수
-
-    if(json != null && json != "{}"){
-      Map<String, dynamic>  delayImageMap = jsonDecode(json);
-      if(delayImageMap.isNotEmpty){
-        for (var key in delayImageMap.keys) {
-          File image = File(delayImageMap[key]!);
-          var stream = http.ByteStream(DelegatingStream.typed(image.openRead()));
-          var length = await image.length();
-
-          Map<String, String> headers = {
-            "Content-Type": "application/json",
-            
-            "Authorization": "Bearer $token"
-          };
-
-          Map<String, String> mapPhoto = {
-            "_id" : key
-          };
-
-          //사진의 ID를 통해 사진을 정보를 업로드
-          final uri = Uri.parse('${BaseConfig.baseUrl}/photos/upload');
-          var request = http.MultipartRequest("POST", uri);
-          var multipartFile = http.MultipartFile(
-              'img', stream, length,
-              filename: basename(image.path),
-              contentType: MediaType('image', 'png')
-          );
-
-          request.headers.addAll(headers);
-          request.fields.addAll(mapPhoto);
-          request.files.add(multipartFile);
-          final response = await request.send();
-          if (response.statusCode >= 200 && response.statusCode < 300) {
-            flag = true;
-          }else{
-            flag = false;
-          }
-        }
-      }
-      if(flag){
-        await storage.clear();
-        return true;
-      }
-    }else{
-      return false; //일관 사진을 없을 때
-    }
-    throw Exception('error upload plan photo by token');
-  }
-  
-  Future<bool?> deletePlanPhoto(String photoId) async{
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    String? token = prefs.getString("token");
-    final uri = Uri.parse(BaseConfig.baseUrl+"/photos/$photoId");
-
+    final uri = Uri.parse(BaseConfig.devURL+"/posts/$postId");
     final response = await http.delete(uri,
         headers: {
           "Content-Type": "application/json",
-          
-          "Authorization": "Bearer $token"});
+          "Authorization": "Bearer $token"}
+    );
     if (response.statusCode >= 200 && response.statusCode < 300) {
-      final LocalStorage storage = LocalStorage('hms-scim');
-      Map<String, String> delayImageMap = {};
-      String? json = storage.getItem("delay_image_list");
-      try{
-        if(json != null){
-          delayImageMap = jsonDecode(json).cast<String,String>();
-          delayImageMap.remove(photoId);
-        }
-        storage.setItem("delay_image_list", jsonEncode(delayImageMap));
-      }catch(e){
-        log(e.toString());
-      }
       return true;
     }
-    throw Exception('error deleting plan photo by token');
-  }
 
-  Future<Post?> saveAddInfo({required Post plan}) async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    String? token = prefs.getString("token");
-
-    Map<String, dynamic> map = {
-
-    };
-
-    final uri = Uri.parse(BaseConfig.baseUrl+'/plans/${plan.id}');
-    final response = await http.put(uri,
-      headers: {
-        "Content-Type": "application/json",
-        
-        "Authorization": "Bearer $token"},
-        body: jsonEncode(map),
-    );
-
-    if (response.statusCode >= 200 && response.statusCode <= 304) {
-      Map<String, dynamic> map = jsonDecode(response.body);
-      Post resPlan = Post.fromJson(map);
-      return resPlan;
-    }
-    throw Exception('error putting plan err');
+    throw Exception('error getting list doing plan by token');
   }
 }
