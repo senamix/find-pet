@@ -8,6 +8,7 @@ import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:intl/intl.dart';
 import 'package:logging/logging.dart';
 import 'package:scim/src/common/dialog_widget.dart';
 import 'package:scim/src/configs/base_config.dart';
@@ -16,6 +17,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:signalr_netcore/signalr_client.dart';
 
 import '../../../splash/view/splash_page.dart';
+import '../../utils/convert_date.dart';
 import '../bloc/worker_bloc.dart';
 import '../models/models.dart';
 
@@ -46,7 +48,7 @@ class _WorkImageViewState extends State<WorkerImageView> {
   final WorkerBloc _workerBloc = WorkerBloc();
   int _currentIndex = 0;
   String? comment;
-  List<Object> comments = [];
+  List<String> comments = [];
 
   Future<String?> get username async {
     Future<SharedPreferences> futurePrefs = SharedPreferences.getInstance();
@@ -58,7 +60,7 @@ class _WorkImageViewState extends State<WorkerImageView> {
   @override
   void initState() {
     super.initState();
-    initSignalR();
+    // initSignalR();
     _workerBloc.add(WorkerGetListPhoto(widget.post));
     _workerBloc.add(WorkerGetFollowPost(widget.post));
     BackButtonInterceptor.add(myInterceptor);
@@ -68,8 +70,8 @@ class _WorkImageViewState extends State<WorkerImageView> {
   void dispose() {
     BackButtonInterceptor.remove(myInterceptor);
     super.dispose();
-    hubConnection.off("LoadComments");
-    hubConnection.off("SendComment");
+    // hubConnection.off("LoadComments");
+    // hubConnection.off("SendComment");
   }
 
   bool myInterceptor(bool stopDefaultButtonEvent, RouteInfo info) {
@@ -186,9 +188,12 @@ class _WorkImageViewState extends State<WorkerImageView> {
                                             hintText: '댓글',
                                             suffixIcon: IconButton(
                                               onPressed: () async{
-                                                if(hubConnection.state == HubConnectionState.Connected){
-                                                  await hubConnection.invoke("SendComment", args: <Object>[comment ?? '']);
-                                                }
+                                                // if(hubConnection.state == HubConnectionState.Connected){
+                                                //   await hubConnection.invoke("SendComment", args: <Object>[comment ?? '']);
+                                                // }
+                                                setState(() {
+                                                  comments.add(DateFormat("yyyy-MM-dd HH:mm").format(DateTime.now()) + ' ' + (comment ?? ''));
+                                                });
                                               },
                                               icon: const Icon(Icons.send_outlined),
                                             )
@@ -222,7 +227,12 @@ class _WorkImageViewState extends State<WorkerImageView> {
     return SingleChildScrollView(
         scrollDirection: Axis.vertical,
         child: Column(
-          children: comments.map((item) => Text(item.toString())).toList(),
+          children: comments.map((item) => Row(
+            mainAxisAlignment: MainAxisAlignment.start,
+            children: [
+              const Padding(padding: EdgeInsets.all(10)),
+              Text(item.toString())
+          ],)).toList(),
         )
     );
   }
@@ -488,7 +498,7 @@ class _WorkImageViewState extends State<WorkerImageView> {
     });
     hubConnection.on("ReceiveComment", (arguments) {
       setState(() {
-        comments = arguments;
+        // comments = arguments;
       });
     });
   }
