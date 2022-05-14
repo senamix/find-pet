@@ -69,8 +69,15 @@ class WorkerRepository {
   Future<List<Post>?> getSearchByConditions({String? roadLocation, List<String>? tags, String? fromDate, String? toDate}) async{
     SharedPreferences prefs = await SharedPreferences.getInstance();
     String? token = prefs.getString("token");
-    final uri = Uri.parse(BaseConfig.devURL+
-        '/posts?roadLocation=${roadLocation ?? ''}&Tag1=${tags?[0] ?? ''}&Tag2=${tags?[1] ?? ''}&Tag3=${tags?[2] ?? ''}&Tag4=${tags?[3] ?? ''}&Tag5=${tags?[4] ?? ''}&fromDate=${fromDate ?? ''}&toDate=${toDate ?? ''}');
+    String params = BaseConfig.devURL+
+        '/posts?roadLocation=${roadLocation ?? ''}&Tag1=${tags?[0] ?? ''}&Tag2=${tags?[1] ?? ''}&Tag3=${tags?[2] ?? ''}&Tag4=${tags?[3] ?? ''}&Tag5=${tags?[4] ?? ''}';
+    if(fromDate != null){
+      params = params + '&fromDate=${fromDate ?? ''}';
+    }
+    if(toDate != null){
+      params = params + '&toDate=${toDate ?? ''}';
+    }
+    final uri = Uri.parse(params);
     final response = await http.get(uri,
       headers: {
         "Content-Type": "application/json",

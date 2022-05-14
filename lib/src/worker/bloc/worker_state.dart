@@ -9,6 +9,7 @@ class WorkerState extends Equatable{
   WorkerState({
       this.status,
       this.doingPlans = const <Post>[],
+      this.searchPosts = const <Post>[],
       this.photos =  const <Photo>[],
       this.tags =  const <Tag>[],
       this.address = '',
@@ -20,6 +21,7 @@ class WorkerState extends Equatable{
 
     WorkerStatus? status;
     final List<Post> doingPlans;
+    final List<Post> searchPosts;
     final List<Photo> photos;
     final List<Tag> tags;
     final String address;
@@ -30,6 +32,7 @@ class WorkerState extends Equatable{
   WorkerState copyWith({
     WorkerStatus? status,
     List<Post>? doingPlans,
+    List<Post>? searchPosts,
     List<Photo>? photos,
     List<Tag>? tags,
     String? address,
@@ -40,6 +43,7 @@ class WorkerState extends Equatable{
       return WorkerState(
           status: status ?? this.status,
           doingPlans: doingPlans ?? this.doingPlans,
+          searchPosts : searchPosts ?? this.searchPosts,
           photos: photos ?? this.photos,
           tags: tags ?? this.tags,
           address : address ?? this.address,
@@ -51,6 +55,6 @@ class WorkerState extends Equatable{
 
     @override
     List<Object?> get props => [
-      status, doingPlans, photos, tags,address, heart, follow, hasReachedMax
+      status, doingPlans,searchPosts, photos, tags,address, heart, follow, hasReachedMax
     ];
   }

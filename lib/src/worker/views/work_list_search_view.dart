@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:scim/src/worker/views/views.dart';
 import 'package:scim/src/worker/worker_repository.dart';
 
 import '../../configs/base_config.dart';
@@ -26,6 +27,7 @@ class _WorkerListInfoItemSearchState extends State<WorkerListInfoItemSearch> {
   String? otherTags;
   String? fromDate;
   String? toDate;
+  List<Post> searchPosts = [];
 
   @override
   void initState() {
@@ -269,7 +271,7 @@ class _WorkerListInfoItemSearchState extends State<WorkerListInfoItemSearch> {
                                           if(otherTags != null){
                                             tags = tags + otherTags!;
                                           }
-                                          _workerBloc.add(WorkerSearchPostByConditions(tags: tags, roadLocation: address));
+                                          _workerBloc.add(WorkerSearchPostByConditions(tags: tags, roadLocation: address, fromDate: fromDate, toDate: toDate));
                                         }
                                     ),
                                   )
@@ -281,10 +283,14 @@ class _WorkerListInfoItemSearchState extends State<WorkerListInfoItemSearch> {
                       ),
                     ),
                     SingleChildScrollView(
-                      child: Container(),
+                      child: Column(
+                        children: state.searchPosts.isNotEmpty
+                            ? state.searchPosts.map((e) => WorkerListItem(post: e)).toList()
+                            : [Container()],
+                      ),
                     )
                   ],
-                )
+                ),
               ],
             ),
           );
