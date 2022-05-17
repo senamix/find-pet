@@ -18,24 +18,19 @@ class HomeView extends StatefulWidget {
 }
 
 class _HomeViewState extends State<HomeView> {
+  late int _selectedIndex;
+
   @override
   void initState() {
+    _selectedIndex = widget.initIndex ?? 1;
     super.initState();
   }
 
-  List<BottomNavigationBarItem>? barItems(){
-    return user1BarItems;
-  }
-
-  List<BottomNavigationBarItem> user1BarItems = [
+ List<BottomNavigationBarItem> user1BarItems = [
     const BottomNavigationBarItem(
       icon: Icon(Icons.menu),
       label: '메뉴',
     ),
-    // const BottomNavigationBarItem(
-    //   icon: Icon(Icons.location_on_rounded),
-    //   label: '내 근처',
-    // ),
     const BottomNavigationBarItem(
       icon: FaIcon(FontAwesomeIcons.home),
       label: '홈',
@@ -50,18 +45,12 @@ class _HomeViewState extends State<HomeView> {
     ),
   ];
 
-  List<StatefulWidget>? navItems(){
-    return userNavigator;
-  }
-
   List<StatefulWidget> userNavigator = [
     const InfoNavigator(),
     const WorkListNavigator(),
     WorkerAround(),
     const SettingNavigator(),
   ];
-
-  late int _selectedIndex = 1;
 
   @override
   Widget build(BuildContext context) {
@@ -70,19 +59,29 @@ class _HomeViewState extends State<HomeView> {
         //top: false,
         child: IndexedStack(
           index: _selectedIndex,
-          children: navItems()!.map((value) => value).toList(),
+          children: userNavigator.map((value) => value).toList(),
         ),
       ),
       bottomNavigationBar:BottomNavigationBar(
-        currentIndex: widget.initIndex ?? _selectedIndex,
+        currentIndex: _selectedIndex,
         selectedItemColor: Colors.blue.shade500,
         unselectedItemColor: Colors.black54,
         onTap: (int index) {
           setState(() {
             _selectedIndex = index;
+            if(index == 2){
+              Navigator.of(context).pushReplacement(
+                  PageRouteBuilder(
+                      transitionDuration: const Duration(milliseconds: 0),
+                      transitionsBuilder: (c, anim, a2, child) => FadeTransition(opacity: anim, child: child),
+                      pageBuilder: (c, a1, a2) => HomeView(initIndex: 2,)
+                  )
+              );
+            }
           });
+
         },
-        items: barItems()!.map((value) => value).toList(),
+        items: user1BarItems.map((value) => value).toList(),
       ),
     );
   }
