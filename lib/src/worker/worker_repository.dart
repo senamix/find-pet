@@ -1,22 +1,15 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:developer';
-import 'dart:io';
 
 import 'package:async/async.dart';
 import 'package:camera/camera.dart';
-import 'package:dio/dio.dart';
-import 'package:gallery_saver/gallery_saver.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
-import 'package:localstorage/localstorage.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:path/path.dart';
-import 'package:path/path.dart' as path;
 import 'package:scim/src/auth/authentication_repository.dart';
 import 'package:scim/src/configs/base_config.dart';
-import 'package:scim/src/setting/models/models.dart';
-import 'package:scim/src/utils/convert_date.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../auth/models/auth.dart';
@@ -176,7 +169,7 @@ class WorkerRepository {
   }
 
   static Future<List<PostLocation>>? getRoadInfo(String address) async{
-    String vworld = 'http://api.vworld.kr/req/search?service=search&request=search&version=2.0&size=20&page=1&query=가산&type=address&format=json&errorformat=json&key=7DE98C24-F447-3263-BD86-A3AB1E460311&category=road';
+    String vworld = 'http://api.vworld.kr/req/search?service=search&request=search&version=2.0&size=20&page=1&query=$address&type=address&format=json&errorformat=json&key=7DE98C24-F447-3263-BD86-A3AB1E460311&category=road';
 
     final uri = Uri.parse(vworld);
     final response = await http.get(uri,
@@ -271,8 +264,7 @@ class WorkerRepository {
 
     if(tags != null){
       int i = tags.length;
-      for(i; i<6; i++){
-        i++;
+      for(i; i<5; i++){
         tags.add("");
       }
     }
