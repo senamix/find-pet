@@ -5,10 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:scim/src/worker/views/views.dart';
 import 'package:scim/src/worker/views/work_image_widget.dart';
 import 'package:scim/src/worker/worker_repository.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import '../bloc/worker_bloc.dart';
 import '../models/models.dart';
@@ -50,13 +48,20 @@ class _WorkerAroundState extends State<WorkerAround> {
     for(String id in postLocations.keys){
       markers.add(Marker(
           markerId: MarkerId(id.toString()),
+          infoWindow: InfoWindow( //popup info
+            title: 'Find Pet',
+            snippet: 'Click here to see details',
+            onTap: () async{
+              Post? postById = await _workerRepository.getPostById(id);
+              if(postById != null){
+                Navigator.push(context,
+                    MaterialPageRoute(builder: (context) => WorkerImageView(info: true,post: postById)));
+              }
+            },
+          ),
           draggable: true,
           onTap: () async{
-            Post? postById = await _workerRepository.getPostById(id);
-            if(postById != null){
-              Navigator.push(context,
-                  MaterialPageRoute(builder: (context) => WorkerImageView(info: true,post: postById)));
-            }
+            ///
           },
           position: LatLng(postLocations[id]?.latitude ?? 37.38641126582192,postLocations[id]?.longitude ?? 126.64640378847251)
       ));

@@ -3,7 +3,6 @@ import 'dart:developer';
 
 import 'package:back_button_interceptor/back_button_interceptor.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:camera/camera.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -14,10 +13,10 @@ import 'package:scim/src/common/dialog_widget.dart';
 import 'package:scim/src/configs/base_config.dart';
 import 'package:scim/src/worker/views/views.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:signalr_netcore/signalr_client.dart';
+import 'package:signalr_client/hub_connection.dart';
+import 'package:signalr_client/hub_connection_builder.dart';
 
 import '../../../splash/view/splash_page.dart';
-import '../../utils/convert_date.dart';
 import '../bloc/worker_bloc.dart';
 import '../models/models.dart';
 
@@ -27,8 +26,22 @@ final hubProtLogger = Logger("SignalR - hub");
 final transportProtLogger = Logger("SignalR - transport");
 
 // The location of the SignalR Server.
-final serverUrl = BaseConfig.devServer;
+final serverUrl = BaseConfig.singalrURl;
 late HubConnection hubConnection;
+
+class Comment{
+  String? Text;
+
+  Comment(this.Text);
+
+  Comment.fromJson(Map<String, dynamic> json)
+    : Text = json['Text']
+  ;
+
+  Map<String, dynamic> toJson() => {
+    'Text': Text,
+  };
+}
 
 class WorkerImageView extends StatefulWidget {
   WorkerImageView({Key? key,
@@ -47,8 +60,8 @@ class WorkerImageView extends StatefulWidget {
 class _WorkImageViewState extends State<WorkerImageView> {
   final WorkerBloc _workerBloc = WorkerBloc();
   int _currentIndex = 0;
-  String? comment;
-  List<String> comments = [];
+  Comment? comment;
+  List<Comment> comments = [];
 
   Future<String?> get username async {
     Future<SharedPreferences> futurePrefs = SharedPreferences.getInstance();
@@ -60,7 +73,7 @@ class _WorkImageViewState extends State<WorkerImageView> {
   @override
   void initState() {
     super.initState();
-    // initSignalR();
+    initSignalR();
     _workerBloc.add(WorkerGetListPhoto(widget.post));
     _workerBloc.add(WorkerGetFollowPost(widget.post));
     BackButtonInterceptor.add(myInterceptor);
@@ -70,8 +83,8 @@ class _WorkImageViewState extends State<WorkerImageView> {
   void dispose() {
     BackButtonInterceptor.remove(myInterceptor);
     super.dispose();
-    // hubConnection.off("LoadComments");
-    // hubConnection.off("SendComment");
+    hubConnection.off("LoadComments");
+    hubConnection.off("SendComment");
   }
 
   bool myInterceptor(bool stopDefaultButtonEvent, RouteInfo info) {
@@ -115,14 +128,14 @@ class _WorkImageViewState extends State<WorkerImageView> {
                                       child: Stack(
                                         children: [
                                           _determineBeforeTab(context,size,state),
-                                          IconButton(
+                                          SafeArea(child: IconButton(
                                             icon: const Icon(Icons.arrow_back, color: Colors.white,),
                                             onPressed: () {
                                               {
                                                 Navigator.pop(context);
                                               }
                                             },
-                                          )
+                                          ))
                                         ],
                                       ),
                                     ),
@@ -138,6 +151,7 @@ class _WorkImageViewState extends State<WorkerImageView> {
                                             suffixIcon: IconButton(
                                               onPressed: () async{
                                                 await hubConnection.start();
+                                                print(comment?.toJson());
                                                 await hubConnection.invoke("SendComment", args: <Object>[comment ?? '']);
                                               },
                                               icon: const Icon(Icons.send_outlined),
@@ -146,7 +160,7 @@ class _WorkImageViewState extends State<WorkerImageView> {
                                         keyboardType: TextInputType.multiline,
                                         maxLines: null,
                                         onChanged: (value){
-                                          comment = value;
+                                          comment = Comment(value);
                                         },
                                       ),
                                     ),
@@ -188,11 +202,11 @@ class _WorkImageViewState extends State<WorkerImageView> {
                                             hintText: '댓글',
                                             suffixIcon: IconButton(
                                               onPressed: () async{
-                                                // if(hubConnection.state == HubConnectionState.Connected){
-                                                //   await hubConnection.invoke("SendComment", args: <Object>[comment ?? '']);
-                                                // }
+                                                if(hubConnection.state == HubConnectionState.Connected){
+                                                  await hubConnection.invoke("SendComment", args: <Object>[comment ?? '']);
+                                                }
                                                 setState(() {
-                                                  comments.add(DateFormat("yyyy-MM-dd HH:mm").format(DateTime.now()) + ' ' + (comment ?? ''));
+                                                  // comments.add(DateFormat("yyyy-MM-dd HH:mm").format(DateTime.now()) + ' ' + (comment ?? ''));
                                                 });
                                               },
                                               icon: const Icon(Icons.send_outlined),
@@ -201,7 +215,7 @@ class _WorkImageViewState extends State<WorkerImageView> {
                                         keyboardType: TextInputType.multiline,
                                         maxLines: null,
                                         onChanged: (value){
-                                          comment = value;
+                                          comment = Comment(value);
                                         },
                                       ),
                                     ),
@@ -280,35 +294,29 @@ class _WorkImageViewState extends State<WorkerImageView> {
         Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
+          TextButton(
+            onPressed: () {
+              _workerBloc.add(WorkerfollowPost(post: widget.post));
+            },
+            child: state.heart == true || state.follow == true
+                ? const Icon(FontAwesomeIcons.solidHeart,color: Colors.red)
+                : const Icon(FontAwesomeIcons.heart,color: Colors.black),
+          ),
           Row(
             mainAxisAlignment: MainAxisAlignment.start,
             children: [
               TextButton(
                 onPressed: () {
-                  _workerBloc.add(WorkerfollowPost(post: widget.post));
-                },
-                child: state.heart == true || state.follow == true
-                    ? const Icon(FontAwesomeIcons.solidHeart,color: Colors.red)
-                    : const Icon(FontAwesomeIcons.heart,color: Colors.black),
-              ),
-              TextButton(
-                onPressed: () {
-                    DialogWidget.flutterDialog(context, content: "수정 기능을 자원하지 않습니다.");
-                },
-                child: const Icon(Icons.drive_file_rename_outline,color: Colors.black),
-              ),
-              TextButton(
-                onPressed: () {
                   _workerBloc.add(WorkerDeletePost(widget.post.id ?? ''));
                 },
-                child: const Icon(FontAwesomeIcons.trash,color: Colors.blue),
+                child: const Icon(FontAwesomeIcons.trash,color: Colors.yellow),
+              ),
+              Container(
+                margin: const EdgeInsets.only(right: 20.0),
+                child: Text(widget.post.posterName ?? 'noname'),
               ),
             ],
-          ),
-          Container(
-            margin: const EdgeInsets.only(right: 20.0),
-            child: Text(widget.post.posterName ?? 'noname'),
-          ),
+            ),
           ]
         ),
       ],
@@ -444,8 +452,8 @@ class _WorkImageViewState extends State<WorkerImageView> {
   }
 
   Widget _determineBeforeTab(BuildContext context,Size size, WorkerState state){
-    if(state.photos != null && state.photos!.isNotEmpty){
-      return _renderImageElements(context,size, state.photos ?? []);
+    if(state.photos.isNotEmpty){
+      return _renderImageElements(context,size, state.photos);
     }
     return _renderTabBarNoImage(context, true);
   }
@@ -497,8 +505,9 @@ class _WorkImageViewState extends State<WorkerImageView> {
       log(error.toString());
     });
     hubConnection.on("ReceiveComment", (arguments) {
+      print(arguments);
       setState(() {
-        // comments = arguments;
+        comments = arguments.cast();
       });
     });
   }

@@ -3,9 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:scim/src/utils/convert_date.dart';
-import 'package:scim/src/worker/views/views.dart';
 import 'package:scim/src/worker/views/work_image_widget.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import '../bloc/worker_bloc.dart';
 import '../models/models.dart';
@@ -40,14 +38,13 @@ class _WorkerListItemState extends State<WorkerListItem> {
                     MaterialPageRoute(builder: (context) => WorkerImageView(info: true, post: widget.post)));
             },
             child: Card(
-              margin: const EdgeInsets.all(5.0),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(5),
               ),
               elevation: 2,
               child: Container(
                 width: size.width,
-                padding: const EdgeInsets.all(10),
+                padding: const EdgeInsets.all(3),
                 child: Row(
                   children: [
                     ClipRRect(
@@ -55,14 +52,13 @@ class _WorkerListItemState extends State<WorkerListItem> {
                       child: SizedBox(
                         width: size.width*0.3,
                         height: size.height*0.15,
-                        child: Image.network(widget.post.photos?.isNotEmpty == true
-                            ? widget.post.photos![0].url!
-                            : 'https://previews.123rf.com/images/pavelstasevich/pavelstasevich1902/pavelstasevich190200120/124934975-symbol-kein-bild-verf%C3%BCgbar-vektor-flach.jpg'),
-                      ),
+                        child: widget.post.photos?.isNotEmpty == true 
+                          ? Image.network(widget.post.photos![0].url!)
+                          : Image.asset("/assets/images/none.png"),
+                      )
                     ),
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
-                      // mainAxisAlignment: MainAxisAlignment.end,
                       children: [
                         Container(
                           padding: const EdgeInsets.only(left: 10, right: 5),
@@ -71,28 +67,35 @@ class _WorkerListItemState extends State<WorkerListItem> {
                             child: Text(widget.post.title ?? '',
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
                             ),
                           ),
+                        ),
+                        const Padding(padding: EdgeInsets.only(top: 5)),
+                        Container(
+                          padding: const EdgeInsets.only(left: 10, right: 5),
+                          child: Text(ConvertDate.convertStringToLocalString(widget.post.createdAt ?? '')),
                         ),
                         Container(
                           padding: const EdgeInsets.only(left: 10, right: 5),
                           child: Text(widget.post.postLocation?.location ?? ''),
                         ),
-                        Container(
-                          padding: const EdgeInsets.only(left: 10, right: 5),
-                          child: Text(ConvertDate.convertStringToLocalString(widget.post.createdAt ?? '')),
-                        ),
                         const Padding(padding: EdgeInsets.only(top: 10)),
                         Container(
                           padding: const EdgeInsets.only(left: 10, right: 5),
                           child: Row(
-                            mainAxisAlignment: MainAxisAlignment.end,
                             children: [
-                              const Icon(FontAwesomeIcons.heart),
-                              Text(widget.post.postParticipants?.length.toString() ?? ''),
-                              const Padding(padding: EdgeInsets.only(left: 10)),
-                              // const Icon(FontAwesomeIcons.comment),
-                              // const Text("3"),
+                              const Icon(FontAwesomeIcons.solidHeart, color: Colors.red,),
+                              Text(' ${widget.post.postParticipants?.length.toString() ?? ''}'),
+                              Padding(padding: EdgeInsets.only(left: size.width*0.3)),
+                              Container(
+                                alignment: Alignment.bottomRight,
+                                child: const Icon(FontAwesomeIcons.userCircle),
+                              ),
+                              Container(
+                                alignment: Alignment.bottomRight,
+                                child: Text(' ${widget.post.posterName  ?? ''}'),
+                              )
                             ],
                           ),
                         ),

@@ -1,13 +1,16 @@
+import 'dart:async';
+
 import 'package:date_time_picker/date_time_picker.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_map/flutter_map.dart';
-import 'package:latlong2/latlong.dart';
+// import 'package:flutter_map/flutter_map.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:scim/src/common/dialog_widget.dart';
+// import 'package:latlong2/latlong.dart';
 import 'package:scim/src/worker/views/views.dart';
 import 'package:scim/src/worker/worker_repository.dart';
 
-import '../../configs/base_config.dart';
 import '../bloc/worker_bloc.dart';
 import '../models/models.dart';
 
@@ -28,6 +31,7 @@ class _WorkerListInfoItemSearchState extends State<WorkerListInfoItemSearch> {
   String? fromDate;
   String? toDate;
   List<Post> searchPosts = [];
+  final Completer<GoogleMapController> _mapController = Completer();
 
   @override
   void initState() {
@@ -72,224 +76,222 @@ class _WorkerListInfoItemSearchState extends State<WorkerListInfoItemSearch> {
             body: Stack(
               children: [
                 Flexible(
-                    child: FlutterMap(
-                      options: MapOptions(
-                        enableScrollWheel: false,
-                        enableMultiFingerGestureRace: false,
-                        minZoom: 9,
-                        maxZoom: 18,
-                        zoom: 9,
-                        center: LatLng(37.38641126582192,126.64640378847251),
-                        interactiveFlags: InteractiveFlag.pinchZoom | InteractiveFlag.drag,
+                    child: GoogleMap(
+                      mapType: MapType.normal,
+                      myLocationEnabled: true,
+                      myLocationButtonEnabled: true,
+                      zoomControlsEnabled: false,
+                      onMapCreated: (GoogleMapController controller) {
+                        _mapController.complete(controller);
+                      },
+                      initialCameraPosition: const CameraPosition(
+                        target: LatLng(37.38641126582192,126.64640378847251),
+                        zoom: 14,
                       ),
-                      layers: [
-                        // FlutterMap 에서 로딩할 Map Layer 정의
-                        TileLayerOptions(
-                          minZoom: 9,
-                          maxZoom: 19,
-                          backgroundColor: const Color(0x00FFFFFF), //배경 투명하게
-                          urlTemplate: BaseConfig.vWorldUrl,
-                        ),
-                      ],
                     )
                 ),
-                Column(
-                  children: [
-                    Card(
-                      child: SingleChildScrollView(
-                        scrollDirection: Axis.vertical,
-                        child: Column(
-                          children: [
-                            Container(
-                              margin: const EdgeInsets.only(left: 20.0, right: 20.0, top: 5),
-                              child: Column(
-                                children: [
-                                  Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      const Text("도로명: ",style: TextStyle(fontWeight: FontWeight.bold)),
-                                      SizedBox(
-                                        width: size.width*0.6,
-                                        child: TextFormField(
-                                          textAlign: TextAlign.left,
-                                          controller: _controller,
-                                          decoration: InputDecoration(
-                                            contentPadding: const EdgeInsets.fromLTRB(15.0, 5.0, 15.0, 5.0),
-                                            border: OutlineInputBorder(
-                                                borderRadius: BorderRadius.circular(32.0)
-                                            ),
-                                            hintText: "가산동",
-                                            suffixIcon: IconButton(
-                                              onPressed: () async{
-                                                List<PostLocation>? addresses = await WorkerRepository.getRoadInfo(address ?? '');
-                                                List<String> roads = [];
-                                                if(addresses != null){
-                                                  for(PostLocation road in addresses){
-                                                    roads.add(road.roadLocation ?? '');
+                SingleChildScrollView(
+                  scrollDirection: Axis.vertical,
+                  child: Column(
+                    children: [
+                      Card(
+                        child: SingleChildScrollView(
+                          scrollDirection: Axis.vertical,
+                          child: Column(
+                            children: [
+                              Container(
+                                margin: const EdgeInsets.only(left: 20.0, right: 20.0, top: 5),
+                                child: Column(
+                                  children: [
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        const Text("도로명: ",style: TextStyle(fontWeight: FontWeight.bold)),
+                                        SizedBox(
+                                          width: size.width*0.6,
+                                          child: TextFormField(
+                                            textAlign: TextAlign.left,
+                                            controller: _controller,
+                                            decoration: InputDecoration(
+                                              contentPadding: const EdgeInsets.fromLTRB(15.0, 5.0, 15.0, 5.0),
+                                              border: OutlineInputBorder(
+                                                  borderRadius: BorderRadius.circular(32.0)
+                                              ),
+                                              hintText: "도로명을 입력하세요...",
+                                              suffixIcon: IconButton(
+                                                onPressed: () async{
+                                                  if(address == null || address == ''){
+                                                      DialogWidget.flutterDialog(context, content: "도로명을 입력해야 해당 주소을 찾을 수 있습니다.");
+                                                  }else{
+                                                    List<PostLocation>? addresses = await WorkerRepository.getRoadInfo(address ?? '');
+                                                    List<String> roads = [];
+                                                    if(addresses != null){
+                                                      for(PostLocation road in addresses){
+                                                        roads.add(road.roadLocation ?? '');
+                                                      }
+                                                    }
+                                                    if(addresses != null && addresses.isNotEmpty){
+                                                      _showDialog(context, roads, state);
+                                                    }
                                                   }
-                                                }
-                                                if(addresses != null && addresses.isNotEmpty){
-                                                  _showDialog(context, roads, state);
-                                                }
-                                              },
-                                              icon: const Icon(Icons.search_off),
+                                                },
+                                                icon: const Icon(Icons.search_off),
+                                              ),
                                             ),
-                                          ),
-                                          onChanged: (String? value){
-                                            setState(() {
-                                              address = value;
-                                            });
-                                          },
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      const Text("시작: ",style: TextStyle(fontWeight: FontWeight.bold)),
-                                      SizedBox(
-                                        width: size.width*0.6,
-                                        child: DateTimePicker(
-                                          type: DateTimePickerType.date,
-                                          dateMask: 'yyyy-MM-dd',
-                                          initialValue: DateTime.now().toString(),
-                                          firstDate: DateTime(1900),
-                                          lastDate: DateTime(2100),
-                                          icon: const Icon(Icons.event),
-                                          dateLabelText: '시작',
-                                          onChanged: (val){
-                                            setState(() {
-                                              fromDate = val;
-                                            });
-                                          },
-                                          validator: (val) {
-                                            print(val);
-                                            return null;
-                                          },
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      const Text("종류: ",style: TextStyle(fontWeight: FontWeight.bold)),
-                                      SizedBox(
-                                        width: size.width*0.6,
-                                        child: DateTimePicker(
-                                          type: DateTimePickerType.date,
-                                          dateMask: 'yyyy-MM-dd',
-                                          initialValue: DateTime.now().toString(),
-                                          firstDate: DateTime(1900),
-                                          lastDate: DateTime(2100),
-                                          icon: const Icon(Icons.event),
-                                          dateLabelText: '종류',
-                                          onChanged: (val){
-                                            toDate = val;
-                                          },
-                                          validator: (val) {
-                                            print("validator -> ${val ?? ''}");
-                                            return null;
-                                          },
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      const Text("태그: ",style: TextStyle(fontWeight: FontWeight.bold)),
-                                      SizedBox(
-                                        width: size.width*0.6,
-                                        child: DropdownButton(
-                                          value: kinds.contains(tag1) ? tag1 : '선택하세요', //real value
-                                          icon: const Icon(Icons.keyboard_arrow_down),
-                                          items: kinds.map((item) => DropdownMenuItem(
-                                            value: item,
-                                            child: SizedBox(
-                                              width: size.width*0.53,
-                                              child: Text(item, textAlign: TextAlign.left, style: const TextStyle(fontSize: 18),), //display item value
-                                            ),
-                                          )).toSet().toList(),
-                                          onChanged: (String? newValue) {
-                                            if(newValue != null){
+                                            onChanged: (String? value){
                                               setState(() {
-                                                tag1 = newValue;
+                                                address = value;
                                               });
-                                            }
-                                          },
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  const Padding(padding: EdgeInsets.only(top: 5.0)),
-                                  Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      const Text("다른 태그: ",style: TextStyle(fontWeight: FontWeight.bold)),
-                                      SizedBox(
-                                        width: size.width*0.6,
-                                        child: TextFormField(
-                                          textAlign: TextAlign.left,
-                                          decoration: InputDecoration(
-                                            contentPadding: const EdgeInsets.fromLTRB(15.0, 5.0, 15.0, 5.0),
-                                            border: OutlineInputBorder(
-                                                borderRadius: BorderRadius.circular(32.0)
-                                            ),
-                                            hintText: "예: 색깔, 크기, 높이, ...",
-                                          ),
-                                          onChanged: (String? value){
-                                            if(value != null){
-                                              setState(() {
-                                                otherTags = value;
-                                              });
-                                            }
-                                          },
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  Container(
-                                    alignment: Alignment.bottomRight,
-                                    margin: const EdgeInsets.only(top: 5, bottom: 5),
-                                    child: ElevatedButton(
-                                        child: SizedBox(
-                                          width: size.width*0.17,
-                                          child: Row(
-                                            children: const [
-                                              Icon(Icons.search),
-                                              Text(' 검색')
-                                            ],
+                                            },
                                           ),
                                         ),
-                                        onPressed: () {
-                                          String tags = '';
-                                          if(tag1 != null){
-                                            tags = tag1!;
-                                          }
-                                          if(otherTags != null){
-                                            tags = tags + otherTags!;
-                                          }
-                                          _workerBloc.add(WorkerSearchPostByConditions(tags: tags, roadLocation: address, fromDate: fromDate, toDate: toDate));
-                                        }
+                                      ],
                                     ),
-                                  )
-                                ],
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        const Text("시작: ",style: TextStyle(fontWeight: FontWeight.bold)),
+                                        SizedBox(
+                                          width: size.width*0.6,
+                                          child: DateTimePicker(
+                                            type: DateTimePickerType.date,
+                                            dateMask: 'yyyy-MM-dd',
+                                            initialValue: DateTime.now().toString(),
+                                            firstDate: DateTime(1900),
+                                            lastDate: DateTime(2100),
+                                            icon: const Icon(Icons.event),
+                                            dateLabelText: '시작',
+                                            onChanged: (val){
+                                              setState(() {
+                                                fromDate = val;
+                                              });
+                                            },
+                                            validator: (val) {
+                                              print(val);
+                                              return null;
+                                            },
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        const Text("종류: ",style: TextStyle(fontWeight: FontWeight.bold)),
+                                        SizedBox(
+                                          width: size.width*0.6,
+                                          child: DateTimePicker(
+                                            type: DateTimePickerType.date,
+                                            dateMask: 'yyyy-MM-dd',
+                                            initialValue: DateTime.now().toString(),
+                                            firstDate: DateTime(1900),
+                                            lastDate: DateTime(2100),
+                                            icon: const Icon(Icons.event),
+                                            dateLabelText: '종류',
+                                            onChanged: (val){
+                                              toDate = val;
+                                            },
+                                            validator: (val) {
+                                              print("validator -> ${val ?? ''}");
+                                              return null;
+                                            },
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        const Text("태그: ",style: TextStyle(fontWeight: FontWeight.bold)),
+                                        SizedBox(
+                                          width: size.width*0.6,
+                                          child: DropdownButton(
+                                            value: kinds.contains(tag1) ? tag1 : '선택하세요', //real value
+                                            icon: const Icon(Icons.keyboard_arrow_down),
+                                            items: kinds.map((item) => DropdownMenuItem(
+                                              value: item,
+                                              child: SizedBox(
+                                                width: size.width*0.53,
+                                                child: Text(item, textAlign: TextAlign.left, style: const TextStyle(fontSize: 18),), //display item value
+                                              ),
+                                            )).toSet().toList(),
+                                            onChanged: (String? newValue) {
+                                              if(newValue != null){
+                                                setState(() {
+                                                  tag1 = newValue;
+                                                });
+                                              }
+                                            },
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    const Padding(padding: EdgeInsets.only(top: 5.0)),
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        const Text("다른 태그: ",style: TextStyle(fontWeight: FontWeight.bold)),
+                                        SizedBox(
+                                          width: size.width*0.6,
+                                          child: TextFormField(
+                                            textAlign: TextAlign.left,
+                                            decoration: InputDecoration(
+                                              contentPadding: const EdgeInsets.fromLTRB(15.0, 5.0, 15.0, 5.0),
+                                              border: OutlineInputBorder(
+                                                  borderRadius: BorderRadius.circular(32.0)
+                                              ),
+                                              hintText: "예: 색깔, 크기, 높이, ...",
+                                            ),
+                                            onChanged: (String? value){
+                                              if(value != null){
+                                                setState(() {
+                                                  otherTags = value;
+                                                });
+                                              }
+                                            },
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    Container(
+                                      alignment: Alignment.bottomRight,
+                                      margin: const EdgeInsets.only(top: 5, bottom: 5),
+                                      child: ElevatedButton(
+                                          child: SizedBox(
+                                            width: size.width*0.17,
+                                            child: Row(
+                                              children: const [
+                                                Icon(Icons.search),
+                                                Text(' 검색')
+                                              ],
+                                            ),
+                                          ),
+                                          onPressed: () {
+                                            String tags = '';
+                                            if(tag1 != null){
+                                              tags = tag1!;
+                                            }
+                                            if(otherTags != null){
+                                              tags = tags + otherTags!;
+                                            }
+                                            _workerBloc.add(WorkerSearchPostByConditions(tags: tags, roadLocation: address, fromDate: fromDate, toDate: toDate));
+                                          }
+                                      ),
+                                    )
+                                  ],
+                                ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       ),
-                    ),
-                    SingleChildScrollView(
-                      child: Column(
+                      Column(
                         children: state.searchPosts.isNotEmpty
                             ? state.searchPosts.map((e) => WorkerListItem(post: e)).toList()
                             : [Container()],
-                      ),
-                    )
-                  ],
+                      )
+                    ],
+                  ),
                 ),
               ],
             ),
