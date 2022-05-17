@@ -116,7 +116,9 @@ class WorkerBloc extends Bloc<WorkerEvent, WorkerState>{
       //ng nam
       List<String> tags = event.tags.split(",");
       tags.addAll(['','','','','']);
-      List<Post>? posts = await workerRepository.getSearchByConditions(roadLocation: event.roadLocation, tags: tags);
+      List<Post>? posts = await workerRepository.getSearchByConditions(
+          roadLocation: event.roadLocation, tags: tags, fromDate: event.fromDate, toDate: event.toDate
+      );
       if(posts != null){
         emit(state.copyWith(
           status: WorkerStatus.success,
